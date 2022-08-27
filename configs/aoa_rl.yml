@@ -24,7 +24,7 @@ language_eval: 1
 val_images_use: -1
 save_checkpoint_every: 3000
 checkpoint_path: log/log_aoanet_coco_rl
-max_epochs: 80
+max_epochs: 50
 self_critical_after: 0
 learning_rate_decay_start: -1
 scheduled_sampling_start: -1

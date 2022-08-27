@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
@@ -10,10 +7,6 @@ class CaptionModel(nn.Layer):
     def __init__(self):
         super(CaptionModel, self).__init__()
 
-    # implements beam search
-    # calls beam_step and returns the final set of beams
-    # augments log-probabilities with diversity terms when number of groups > 1
-
     def forward(self, *args, **kwargs):
         mode = kwargs.get('mode', 'forward')
         if 'mode' in kwargs:
@@ -21,9 +14,7 @@ class CaptionModel(nn.Layer):
         return getattr(self, '_' + mode)(*args, **kwargs)
 
     def beam_search(self, state, *args, opt=None):
-        # args: tmp_fc_feats, tmp_att_feats, tmp_att_cnn_feats, tmp_p_att_feats, tmp_att_masks
         args = list(args)
-
         k = opt['beam_size']
         vocab_size = self.vocab_size + 1
         it = paddle.zeros([k], dtype='int64')  # k
@@ -61,15 +52,15 @@ class CaptionModel(nn.Layer):
             next_word_inds = top_k_words % vocab_size  # (s)
 
             # Add new words to sequences
-            seqs = paddle.concat([seqs[prev_word_inds.unsqueeze(1)], next_word_inds.unsqueeze(1)], 1)  # (s, step+1)
+            seqs_prev_word_inds = seqs[prev_word_inds]
+            if len(prev_word_inds) == 1:
+                 seqs_prev_word_inds = seqs_prev_word_inds.unsqueeze(0)
+            seqs = paddle.concat([seqs_prev_word_inds, next_word_inds.unsqueeze(1)], 1)  # (s, step+1)
 
             # Which sequences are incomplete (didn't reach <end>)?
             incomplete_inds = [ind for ind, next_word in enumerate(next_word_inds) if
                                next_word != 0]
             complete_inds = list(set(range(len(next_word_inds))) - set(incomplete_inds))
-
-            incomplete_inds = paddle.to_tensor(incomplete_inds).unsqueeze(1)
-            complete_inds = paddle.to_tensor(complete_inds).unsqueeze(1)
 
             # Set aside complete sequences
             if len(complete_inds) > 0:
@@ -80,7 +71,6 @@ class CaptionModel(nn.Layer):
             # Proceed with incomplete sequences
             if k == 0:
                 break
-
             seqs = seqs[incomplete_inds]
 
             nstate = []
@@ -95,7 +85,6 @@ class CaptionModel(nn.Layer):
 
             top_k_scores = top_k_scores[incomplete_inds].unsqueeze(1)
             it = next_word_inds[incomplete_inds]
-
             args = [args[i][incomplete_inds] for i in range(len(args))]
 
             # Break if things have been going on too long

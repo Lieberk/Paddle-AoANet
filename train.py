@@ -94,7 +94,7 @@ def train(opt):
                     opt.current_lr = opt.learning_rate * decay_factor
                 else:
                     opt.current_lr = opt.learning_rate
-                optimizer.set_lr = opt.current_lr
+                optimizer.set_lr(opt.current_lr)
                 # Assign the scheduled sampling prob
                 if epoch > opt.scheduled_sampling_start >= 0:
                     frac = (epoch - opt.scheduled_sampling_start) // opt.scheduled_sampling_increase_every

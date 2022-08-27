@@ -56,13 +56,9 @@ class AttModel(CaptionModel):
         # For remove bad endding
         self.vocab = opt.vocab
 
-    def init_hidden(self, bsz):
-        x = paddle.zeros([self.num_layers, bsz, self.rnn_size], dtype="float32")
-        return (paddle.create_parameter(x.shape,
-                                        dtype=str(x.numpy().dtype)),
-                paddle.create_parameter(x.shape,
-                                        dtype=str(x.numpy().dtype))
-                )
+    def init_hidden(self, batch_size):
+        return (paddle.zeros([self.num_layers, batch_size, self.rnn_size]),
+                paddle.zeros([self.num_layers, batch_size, self.rnn_size]))
 
     def clip_att(self, att_feats, att_masks):
         # Clip the length of att_masks and att_feats to the maximum length
